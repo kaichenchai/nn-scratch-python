@@ -138,6 +138,20 @@ class Loss_CategoricalCrossentropy(Loss):
         #calculate gradients
         self.dinputs = -y_true / dvalues
         self.dinputs = self.dinputs / samples
+
+class Loss_BinaryCrossentropy(Loss):
+    def forward(self, y_pred, y_true):
+        y_pred_clipped = np.clip(y_pred, 1e-7, 1 - 1e-7)
+        sample_losses = -(y_true * np.log(y_pred_clipped) + (1 - y_true) * np.log(1 - y_pred_clipped))
+        sample_losses = np.mean(sample_losses, axis = -1)
+        return sample_losses
+    
+    def backward(self, dvalues, y_true):
+        samples = len(dvalues)
+        outputs = len(dvalues[0])
+        clipped_dvalues = np.clip(dvalues, 1e-7, 1 - 1e-7)
+        self.dinputs = -(y_true / clipped_dvalues - (1 - y_true) / (1 - clipped_dvalues)) / outputs
+        self.dinputs = self.dinputs / samples
     
 #more efficient backprop implementation that does both at once    
 class Activation_Softmax_Loss_CategoricalCrossentropy():
@@ -162,6 +176,14 @@ class Activation_Softmax_Loss_CategoricalCrossentropy():
         self.dinputs[range(samples), y_true] -= 1
         #normalising gradients
         self.dinputs = self.dinputs / samples
+        
+class Activation_Sigmoid:
+    def forward(self, inputs):
+        self.inputs = inputs
+        self.output = 1 / (1 + np.exp(-inputs))
+    def backward(self, dvalues):
+        self.dinputs = dvalues * (1 - self.output) * self.output
+        
         
 class Optimizer_SGD():
     def __init__(self, learning_rate=1.0, decay=0., momentum = 0.):
