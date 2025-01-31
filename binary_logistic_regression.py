@@ -3,6 +3,8 @@ from main import *
 import nnfs
 from nnfs.datasets import spiral_data
 
+nnfs.init()
+
 if __name__ == "__main__":
     X, y = spiral_data(samples=100, classes=2)
     y = y.reshape(-1, 1)
